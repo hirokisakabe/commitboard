@@ -20,22 +20,22 @@ export async function RepositoryCommitsLineChart() {
 
 async function fetchRepositoryCommits() {
   const repos = await fetchFromGitHubApi(
-    "https://api.github.com/user/repos?type=owner&sort=updated&per_page=5"
+    "https://api.github.com/user/repos?type=owner&sort=updated&per_page=5",
   );
 
   const commits = await Promise.all(
     repos.map(async (repo: { commits_url: string; name: string }) => {
       const commits = await fetchFromGitHubApi(
-        repo.commits_url.replaceAll("{/sha}", "")
+        repo.commits_url.replaceAll("{/sha}", ""),
       );
 
       const commitDateList = commits.map(
         (item: { commit: { author: { date: string } } }) =>
-          format(new Date(item.commit.author.date), "yyyy-MM-dd")
+          format(new Date(item.commit.author.date), "yyyy-MM-dd"),
       );
 
       return { repoName: repo.name, commitDateList };
-    })
+    }),
   );
 
   const today = new Date();
@@ -60,7 +60,7 @@ async function fetchRepositoryCommits() {
             [currentValue.repoName]: count,
           };
         },
-        {}
+        {},
       );
 
       return { day: format(targetDate, "MM/dd"), ...repoListObj };
