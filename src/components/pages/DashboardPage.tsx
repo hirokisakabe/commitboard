@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
-import { Center, RepositoryCommitsLineChart } from "../parts";
+import { Center, Repositories, RepositoryCommitsLineChart } from "../parts";
 import { nextAuth } from "@/lib";
 
 export async function DashboardPage() {
@@ -13,6 +13,7 @@ export async function DashboardPage() {
   return (
     <Center>
       <RepositoryCommitsLineChart />
+      <Repositories />
     </Center>
   );
 }
