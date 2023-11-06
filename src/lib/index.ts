@@ -1,2 +1,3 @@
 export * from "./nextAuth";
-export * from "./fetchFromGitHubApi";
+export * from "./fetchGitHubCommits";
+export * from "./fetchGitHubUserRepos";
