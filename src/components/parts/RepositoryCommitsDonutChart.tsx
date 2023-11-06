@@ -1,4 +1,4 @@
-import { fetchFromGitHubApi } from "@/lib";
+import { fetchGitHubCommits, fetchGitHubUserRepos } from "@/lib";
 import { Card, Title, Text, DonutChart } from "@tremor/react";
 import { subDays, format } from "date-fns";
 
@@ -20,19 +20,22 @@ export async function RepositoryCommitsDonutChart() {
 }
 
 async function fetchRepositoryCommits() {
-  const repos = await fetchFromGitHubApi(
-    "https://api.github.com/user/repos?type=owner&sort=updated&per_page=5",
-  );
+  const repos = await fetchGitHubUserRepos({ perPage: 5 });
+
+  if (!repos.success) {
+    return { recentCommitCounts: [] };
+  }
 
   const commits = await Promise.all(
-    repos.map(async (repo: { commits_url: string; name: string }) => {
-      const commits = await fetchFromGitHubApi(
-        repo.commits_url.replaceAll("{/sha}", ""),
-      );
+    repos.data.map(async (repo) => {
+      const commits = await fetchGitHubCommits(repo.commits_url);
 
-      const commitDateList = commits.map(
-        (item: { commit: { author: { date: string } } }) =>
-          format(new Date(item.commit.author.date), "yyyy-MM-dd"),
+      if (!commits.success) {
+        return { repoName: repo.name, commitDateList: [] };
+      }
+
+      const commitDateList = commits.data.map((item) =>
+        format(new Date(item.commit.author.date), "yyyy-MM-dd"),
       );
 
       return { repoName: repo.name, commitDateList };
@@ -46,29 +49,26 @@ async function fetchRepositoryCommits() {
     .map((i) => {
       const targetDate = subDays(today, i);
 
-      const repoListObj = commits.reduce(
-        (accumulator: any, currentValue: any) => {
-          let count = 0;
+      const repoListObj = commits.reduce((accumulator, currentValue) => {
+        let count = 0;
 
-          currentValue.commitDateList.forEach((commit: string) => {
-            if (commit === format(targetDate, "yyyy-MM-dd")) {
-              count = count + 1;
-            }
-          });
+        currentValue.commitDateList.forEach((commit: string) => {
+          if (commit === format(targetDate, "yyyy-MM-dd")) {
+            count = count + 1;
+          }
+        });
 
-          return {
-            ...accumulator,
-            [currentValue.repoName]: count,
-          };
-        },
-        {},
-      );
+        return {
+          ...accumulator,
+          [currentValue.repoName]: count,
+        };
+      }, {});
 
       return { day: format(targetDate, "MM/dd"), ...repoListObj };
     })
     .reverse();
 
-  const recentCommitCounts = repos.map((repo: { name: string }) => {
+  const recentCommitCounts = repos.data.map((repo: { name: string }) => {
     return {
       name: repo.name,
       value: recentCommits.reduce((accumulator: any, currentValue: any) => {
